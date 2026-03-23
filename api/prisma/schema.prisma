@@ -1,0 +1,121 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  VIEWER
+}
+
+enum Status {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(VIEWER)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("user")
+}
+
+model Host {
+  id         String      @id @default(uuid()) @db.Uuid
+  hostname   String
+  containers Container[]
+
+  @@map("host")
+}
+
+model Container {
+  id            String          @id @default(uuid()) @db.Uuid
+  hostId        String          @map("host_id") @db.Uuid
+  containerName String          @map("container_name")
+  
+  host          Host            @relation(fields: [hostId], references: [id])
+  techs         ContainerTech[]
+
+  @@map("container")
+}
+
+model Technology {
+  id      String   @id @default(uuid()) @db.Uuid
+  name    String
+  version String
+  
+  // m:n self-reference for tech dependencies
+  dependencies TechDependency[] @relation("TechHasDependency")
+  requiredBy   TechDependency[] @relation("TechIsRequiredBy")
+  
+  containerTechs ContainerTech[]
+
+  @@map("technology")
+}
+
+model TechDependency {
+  id             String @id @default(uuid()) @db.Uuid
+  techId         String @map("tech_id") @db.Uuid
+  requiresTechId String @map("requires_tech_id") @db.Uuid
+  
+  technology     Technology @relation("TechHasDependency", fields: [techId], references: [id])
+  requiresTech   Technology @relation("TechIsRequiredBy", fields: [requiresTechId], references: [id])
+
+  @@unique([techId, requiresTechId])
+  @@map("tech_dependency")
+}
+
+model ContainerTech {
+  id           String @id @default(uuid()) @db.Uuid
+  containerId  String @map("container_id") @db.Uuid
+  technologyId String @map("technology_id") @db.Uuid
+  source       String
+
+  container    Container   @relation(fields: [containerId], references: [id])
+  technology   Technology  @relation(fields: [technologyId], references: [id])
+  vulnStates   VulnState[]
+
+  @@map("container_tech")
+}
+
+model Vulnerability {
+  cveId           String @id @map("cve_id")
+  vulnerableRange String @map("vulnerable_range")
+  baseSeverity    String @map("base_severity")
+  
+  vulnStates      VulnState[]
+
+  @@map("vulnerability")
+}
+
+model VulnState {
+  id              String   @id @default(uuid()) @db.Uuid
+  containerTechId String   @map("container_tech_id") @db.Uuid
+  cveId           String   @map("cve_id")
+  status          Status   @default(OPEN)
+  
+  containerTech   ContainerTech @relation(fields: [containerTechId], references: [id])
+  vulnerability   Vulnerability @relation(fields: [cveId], references: [cveId])
+  
+  aiInsight       AiInsight?
+
+  @@map("vuln_state")
+}
+
+model AiInsight {
+  id               String @id @default(uuid()) @db.Uuid
+  vulnStateId      String @unique @map("vuln_state_id") @db.Uuid
+  adjustedSeverity String @map("adjusted_severity")
+  
+  vulnState        VulnState @relation(fields: [vulnStateId], references: [id])
+
+  @@map("ai_insight")
+}
