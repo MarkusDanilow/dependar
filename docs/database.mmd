@@ -1,0 +1,72 @@
+erDiagram
+    %% Auth & Users
+    USER {
+        uuid id PK
+        string email
+        string password_hash
+        string role "ADMIN, VIEWER"
+        datetime created_at
+    }
+
+    %% Core Infrastructure
+    HOST ||--o{ CONTAINER : "hosts"
+    CONTAINER ||--o{ CONTAINER_TECH : "uses"
+    
+    %% Technology & Global Dependencies
+    TECHNOLOGY ||--o{ TECH_DEPENDENCY : "has"
+    TECHNOLOGY ||--o{ TECH_DEPENDENCY : "is required by"
+    TECHNOLOGY ||--o{ CONTAINER_TECH : "is deployed as"
+    
+    %% Security & AI
+    VULNERABILITY ||--o{ VULN_STATE : "triggers"
+    CONTAINER_TECH ||--o{ VULN_STATE : "has security state"
+    VULN_STATE ||--o| AI_INSIGHT : "analyzed by"
+
+    HOST {
+        uuid id PK
+        string hostname
+    }
+
+    CONTAINER {
+        uuid id PK
+        uuid host_id FK
+        string container_name
+    }
+
+    TECHNOLOGY {
+        uuid id PK
+        string name "e.g., nextjs"
+        string version "e.g., 14.0.0"
+    }
+
+    TECH_DEPENDENCY {
+        uuid id PK
+        uuid tech_id FK
+        uuid requires_tech_id FK
+    }
+
+    CONTAINER_TECH {
+        uuid id PK
+        uuid container_id FK
+        uuid technology_id FK
+        string source
+    }
+
+    VULNERABILITY {
+        string cve_id PK
+        string vulnerable_range
+        string base_severity
+    }
+
+    VULN_STATE {
+        uuid id PK
+        uuid container_tech_id FK
+        string cve_id FK
+        string status "OPEN, RESOLVED, IGNORED"
+    }
+
+    AI_INSIGHT {
+        uuid id PK
+        uuid vuln_state_id FK
+        string adjusted_severity
+    }

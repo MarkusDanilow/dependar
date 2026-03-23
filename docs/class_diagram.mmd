@@ -1,0 +1,132 @@
+Absolut, wenn wir schon ein BaseRepository bauen, dann richtig! Die vollen CRUD-Operationen (Create, Read, Update, Delete) gehören da standardmäßig als generisches Grundgerüst rein. Sonst schreiben wir in jedem spezifischen Repo den gleichen Code für das Anlegen oder Löschen von Datensätzen immer wieder neu.
+
+Ich habe die Interfaces und die abstrakte Klasse jetzt um create, update, delete, findAll und findOne erweitert. (Ich habe das Auth-Modul aus unserem letzten Schritt natürlich direkt mit drin gelassen, damit nichts verloren geht).
+
+Hier ist das finale, komplette Klassendiagramm. Tausch die Datei 5 einfach nochmal aus:
+
+Datei 5: ARCHITECTURE_CLASSES.md
+Markdown
+# 🏛️ Backend Class Architecture (Layered MVC)
+
+```mermaid
+classDiagram
+    %% --- BASE CLASSES (DRY Principle) ---
+    class BaseController {
+        <<abstract>>
+        #sendSuccess(res: Response, data: any, statusCode?: number): void
+        #handleError(res: Response, error: Error): void
+    }
+
+    class BaseRepository~T~ {
+        <<abstract>>
+        #prisma: PrismaClient
+        +create(data: any): T
+        +findById(id: string): T
+        +findOne(query: any): T
+        +findAll(query?: any): T[]
+        +update(id: string, data: any): T
+        +delete(id: string): T
+        #handleDbError(error: Error): void
+    }
+
+    %% --- INTERFACES ---
+    class IRepository~T~ {
+        <<interface>>
+        +create(data: any): T
+        +findById(id: string): T
+        +findOne(query: any): T
+        +findAll(query?: any): T[]
+        +update(id: string, data: any): T
+        +delete(id: string): T
+    }
+
+    class ITechnologyRepository {
+        <<interface>>
+        +findBySemVer(name: string, versionRange: string): Technology[]
+        +findGlobalDependencies(techId: string): Technology[]
+    }
+
+    class IIngestionStrategy {
+        <<interface>>
+        +parsePayload(payload: any): ParsedTechDTO[]
+    }
+
+    %% --- REPOSITORIES (Data Access Layer) ---
+    class TechnologyRepository {
+        +findBySemVer(name, versionRange)
+        +findGlobalDependencies(techId)
+    }
+    
+    class UserRepository {
+        +findByEmail(email: string): User
+    }
+
+    %% --- SERVICES (Business Logic Layer) ---
+    class AuthService {
+        -userRepo: UserRepository
+        -jwtService: JwtService
+        +login(email, password): string "Returns JWT"
+        +validateUser(jwtPayload): User
+    }
+
+    class IngestionService {
+        -techRepo: ITechnologyRepository
+        -containerTechRepo: IRepository~ContainerTech~
+        +processPayload(source: string, payload: any): void
+        -resolveDependencies(): void
+    }
+
+    class CveSyncService {
+        -vulnRepo: IRepository~Vulnerability~
+        +cronFetchDailyThreats(): void
+    }
+
+    class AiTriageService {
+        -ollamaEndpoint: string
+        +analyzeRiskContext(vulnStateId: string): AiInsight
+    }
+
+    %% --- CONTROLLERS (Presentation/Transport Layer) ---
+    class AuthController {
+        -authService: AuthService
+        +postLogin(dto: LoginDTO): Response
+        +getMe(req: Request): Response
+    }
+
+    class IngestionController {
+        -ingestionService: IngestionService
+        +postAgentData(dto: AgentDTO): Response
+        +postGenericData(dto: GenericJsonDTO): Response
+    }
+
+    class GraphController {
+        -techRepo: ITechnologyRepository
+        +getGlobalGraph(): GraphDTO
+        +getContainerContext(containerId: string): GraphDTO
+    }
+
+    class AiChatController {
+        -aiTriageService: AiTriageService
+        +postChatMessage(message: string): Response
+    }
+
+    %% --- RELATIONSHIPS ---
+    IRepository <|.. BaseRepository
+    BaseRepository <|-- TechnologyRepository
+    BaseRepository <|-- UserRepository
+    ITechnologyRepository <|.. TechnologyRepository
+    
+    BaseController <|-- AuthController
+    BaseController <|-- IngestionController
+    BaseController <|-- GraphController
+    BaseController <|-- AiChatController
+    
+    AuthController --> AuthService
+    AuthService --> UserRepository
+    
+    IngestionController --> IngestionService
+    GraphController --> ITechnologyRepository
+    AiChatController --> AiTriageService
+    
+    IngestionService --> ITechnologyRepository
+    CveSyncService --> ITechnologyRepository

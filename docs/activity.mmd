@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant User
+    participant ChatCtrl as AiChatController
+    participant AI as AiTriageService (Ollama)
+    participant IngestSvc as IngestionService
+    participant DB as DB (Repositories)
+
+    User->>ChatCtrl: POST /chat/message "We installed Notepad++ 8.5 on SRV-01"
+    activate ChatCtrl
+    
+    ChatCtrl->>AI: extractEntities("We installed Notepad++ 8.5 on SRV-01")
+    activate AI
+    AI-->>ChatCtrl: { tech: "notepad++", version: "8.5", host: "SRV-01" }
+    deactivate AI
+    
+    ChatCtrl->>IngestSvc: processPayload('chat', ExtractedDTO)
+    activate IngestSvc
+    
+    IngestSvc->>DB: Upsert TECHNOLOGY (notepad++, 8.5)
+    IngestSvc->>DB: Link to HOST/CONTAINER via CONTAINER_TECH
+    
+    IngestSvc-->>ChatCtrl: Success
+    deactivate IngestSvc
+    
+    ChatCtrl-->>User: 200 OK (Chat Response: "Got it! Added Notepad++ to SRV-01.")
+    deactivate ChatCtrl
