@@ -12,5 +12,23 @@ services:
       - dependar_db_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dependar_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # TIPP: Falls du eine Nvidia-Grafikkarte hast und GPU-Beschleunigung 
+    # nutzen willst, entkommentiere diesen Block:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
 volumes:
+  ollama_data:
   dependar_db_data:

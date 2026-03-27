@@ -1,19 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, LineChart, Cpu, HardDrive, Users, Settings, LogOut, Box, ShieldAlert } from 'lucide-react';
+import { Home, Cpu, HardDrive, Users, LogOut, Box, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Analysen', href: '/analytics', icon: LineChart },
   { name: 'Sicherheitslücken', href: '/vulnerabilities', icon: ShieldAlert },
   { name: 'Projekte', href: '/projects', icon: HardDrive },
   { name: 'Container', href: '/containers', icon: Box },
   { name: 'Technologien', href: '/technologies', icon: Cpu },
   { name: 'Benutzer', href: '/users', icon: Users },
-  { name: 'Einstellungen', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {

@@ -1,17 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, User } from 'lucide-react';
-import { fetchApi } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/api';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
 export function AiChatSidebar() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hallo! Ich bin der Dependar AI Copilot. Füge hier SBOMs, Schwachstellenberichte oder Fragen zu deiner Infrastruktur ein.' }
+    { role: 'assistant', content: 'Hallo! Ich bin der Dependar AI Copilot. Frag mich alles zu deiner Infrastruktur, Schwachstellen oder Projekten.' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,18 +28,62 @@ export function AiChatSidebar() {
 
     const userMsg = input.trim();
     setInput('');
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setIsTyping(true);
 
+    let assistantMsg = '';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('dependar_token') : null;
+
     try {
-      const res = await fetchApi('/chat/message', {
+      const response = await fetch(`${API_BASE_URL}/chat/message/stream`, {
         method: 'POST',
-        body: JSON.stringify({ message: userMsg }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: userMsg, history }),
       });
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data.response }]);
+
+      if (!response.ok) throw new Error('Streaming failed');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) throw new Error('No reader available');
+
+      // Add empty assistant message to be filled
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      setIsTyping(false);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              assistantMsg += data.content;
+              
+              setMessages(prev => {
+                const newMessages = [...prev];
+                const lastIdx = newMessages.length - 1;
+                newMessages[lastIdx] = { ...newMessages[lastIdx], content: assistantMsg };
+                return newMessages;
+              });
+            } catch (e) {
+              console.error('Error parsing SSE chunk', e);
+            }
+          }
+        }
+      }
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Fehler: ${err.message}` }]);
-    } finally {
       setIsTyping(false);
     }
   };
@@ -67,6 +120,7 @@ export function AiChatSidebar() {
             </div>
           </div>
         )}
+        <div ref={scrollRef} />
       </div>
 
       <div className="p-4 border-t border-slate-700 bg-slate-800">
