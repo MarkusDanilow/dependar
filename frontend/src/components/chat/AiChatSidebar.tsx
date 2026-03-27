@@ -8,7 +8,7 @@ type Message = { role: 'user' | 'assistant'; content: string };
 
 export function AiChatSidebar() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hi! I am the Dependar AI Copilot. Paste SBOMs, vulnerability reports, or infrastructure questions here.' }
+    { role: 'assistant', content: 'Hallo! Ich bin der Dependar AI Copilot. Füge hier SBOMs, Schwachstellenberichte oder Fragen zu deiner Infrastruktur ein.' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -29,7 +29,7 @@ export function AiChatSidebar() {
       });
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.response }]);
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${err.message}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `Fehler: ${err.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -39,7 +39,7 @@ export function AiChatSidebar() {
     <div className="w-96 h-full bg-slate-800 border-l border-slate-700 flex flex-col z-40 relative">
       <div className="p-4 border-b border-slate-700 flex items-center gap-2">
         <Bot className="w-5 h-5 text-violet-500" />
-        <h2 className="text-sm font-bold text-slate-100">AI Copilot</h2>
+        <h2 className="text-sm font-bold text-slate-100">KI-Copilot</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -63,7 +63,7 @@ export function AiChatSidebar() {
               <Bot className="w-4 h-4 text-white" />
             </div>
             <div className="p-3 rounded-xl bg-slate-700 text-slate-400 text-sm rounded-tl-none border border-slate-600">
-              <span className="animate-pulse">Thinking...</span>
+              <span className="animate-pulse">Denkt nach...</span>
             </div>
           </div>
         )}
@@ -75,7 +75,7 @@ export function AiChatSidebar() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your stack..."
+            placeholder="Stelle eine Frage zu deinem Stack..."
             className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-4 pr-10 py-3 text-sm text-slate-200 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors shadow-inner"
           />
           <button

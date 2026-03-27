@@ -29,8 +29,15 @@ export class AuthController extends BaseController {
 
   async getMe(request: FastifyRequest, reply: FastifyReply) {
     try {
-      // The user object is attached to request.user by fastify-jwt during authentication
-      return this.sendSuccess(reply, { user: request.user });
+      const decodedUser = request.user as any;
+      const user = await this.authService.validateUser(decodedUser.id);
+      
+      if (!user) {
+        return this.handleError(reply, { status: 404, message: 'User not found' });
+      }
+
+      const { passwordHash, ...rest } = user as any;
+      return this.sendSuccess(reply, { user: rest });
     } catch (error) {
        return this.handleError(reply, error);
     }

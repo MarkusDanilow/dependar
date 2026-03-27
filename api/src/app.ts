@@ -12,6 +12,7 @@ import { settingsRoutes } from './modules/settings/settings.routes';
 import { ingestionRoutes } from './modules/ingest/ingestion.routes';
 import { graphRoutes } from './modules/graph/graph.routes';
 import { chatRoutes } from './modules/chat/chat.routes';
+import { projectRoutes } from './modules/projects/project.routes';
 import { healthRoutes } from './health/health.routes';
 
 // Jobs and Repos
@@ -52,6 +53,7 @@ export function buildApp(): FastifyInstance {
   app.register(ingestionRoutes, { prefix: '/api/v1/ingest' });
   app.register(graphRoutes, { prefix: '/api/v1/graph' });
   app.register(chatRoutes, { prefix: '/api/v1/chat' });
+  app.register(projectRoutes, { prefix: '/api/v1/projects' });
 
   // Start Cron Jobs
   const techRepo = new TechnologyRepository(prisma);

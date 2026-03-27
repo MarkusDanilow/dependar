@@ -14,6 +14,7 @@ enum Role {
 
 enum Status {
   OPEN
+  IN_PROGRESS
   RESOLVED
   IGNORED
 }
@@ -23,6 +24,8 @@ model User {
   email        String   @unique
   passwordHash String   @map("password_hash")
   role         Role     @default(VIEWER)
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("user")
@@ -36,12 +39,24 @@ model Host {
   @@map("host")
 }
 
+model Project {
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @unique
+  description String?
+  containers  Container[]
+  vulnStates  VulnState[]
+
+  @@map("project")
+}
+
 model Container {
   id            String          @id @default(uuid()) @db.Uuid
-  hostId        String          @map("host_id") @db.Uuid
+  projectId     String?         @map("project_id") @db.Uuid
+  hostId        String?         @map("host_id") @db.Uuid
   containerName String          @map("container_name")
   
-  host          Host            @relation(fields: [hostId], references: [id])
+  project       Project?        @relation(fields: [projectId], references: [id])
+  host          Host?           @relation(fields: [hostId], references: [id])
   techs         ContainerTech[]
 
   @@map("container")
@@ -57,6 +72,7 @@ model Technology {
   requiredBy   TechDependency[] @relation("TechIsRequiredBy")
   
   containerTechs ContainerTech[]
+  vulnStates     VulnState[]
 
   @@map("technology")
 }
@@ -81,13 +97,12 @@ model ContainerTech {
 
   container    Container   @relation(fields: [containerId], references: [id])
   technology   Technology  @relation(fields: [technologyId], references: [id])
-  vulnStates   VulnState[]
 
   @@map("container_tech")
 }
 
 model Vulnerability {
-  cveId           String @id @map("cve_id")
+  id              String @id @map("id")
   vulnerableRange String @map("vulnerable_range")
   baseSeverity    String @map("base_severity")
   
@@ -98,12 +113,14 @@ model Vulnerability {
 
 model VulnState {
   id              String   @id @default(uuid()) @db.Uuid
-  containerTechId String   @map("container_tech_id") @db.Uuid
-  cveId           String   @map("cve_id")
+  technologyId    String?  @map("technology_id") @db.Uuid
+  projectId       String?  @map("project_id") @db.Uuid
+  vulnerabilityId String   @map("vulnerability_id")
   status          Status   @default(OPEN)
   
-  containerTech   ContainerTech @relation(fields: [containerTechId], references: [id])
-  vulnerability   Vulnerability @relation(fields: [cveId], references: [cveId])
+  technology      Technology?    @relation(fields: [technologyId], references: [id])
+  project         Project?       @relation(fields: [projectId], references: [id])
+  vulnerability   Vulnerability @relation(fields: [vulnerabilityId], references: [id])
   
   aiInsight       AiInsight?
 

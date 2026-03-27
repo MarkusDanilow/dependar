@@ -19,7 +19,8 @@ erDiagram
     
     %% Security & AI
     VULNERABILITY ||--o{ VULN_STATE : "triggers"
-    CONTAINER_TECH ||--o{ VULN_STATE : "has security state"
+    TECHNOLOGY ||--o{ VULN_STATE : "has security state"
+    PROJECT ||--o{ VULN_STATE : "has security state"
     VULN_STATE ||--o| AI_INSIGHT : "analyzed by"
 
     HOST {
@@ -53,16 +54,17 @@ erDiagram
     }
 
     VULNERABILITY {
-        string cve_id PK
+        string id PK
         string vulnerable_range
         string base_severity
     }
 
     VULN_STATE {
         uuid id PK
-        uuid container_tech_id FK
-        string cve_id FK
-        string status "OPEN, RESOLVED, IGNORED"
+        uuid technology_id FK "optional"
+        uuid project_id FK "optional"
+        string vulnerability_id FK
+        string status "OPEN, IN_PROGRESS, RESOLVED, IGNORED"
     }
 
     AI_INSIGHT {

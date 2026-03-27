@@ -19,7 +19,7 @@ export class ContainerRepository extends BaseRepository<Container, Prisma.Contai
   }
 
   async findAll(query?: Prisma.ContainerWhereInput): Promise<Container[]> {
-    return this.prisma.container.findMany({ where: query });
+    return this.prisma.container.findMany({ where: query, orderBy: { containerName: 'asc' } });
   }
 
   async update(id: string, data: Prisma.ContainerUpdateInput): Promise<Container> {
@@ -31,6 +31,6 @@ export class ContainerRepository extends BaseRepository<Container, Prisma.Contai
   }
 
   async findByHost(hostId: string): Promise<Container[]> {
-    return this.prisma.container.findMany({ where: { hostId } });
+    return this.prisma.container.findMany({ where: { hostId }, orderBy: { containerName: 'asc' } });
   }
 }

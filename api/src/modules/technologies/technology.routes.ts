@@ -9,9 +9,19 @@ export const technologyRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
   const techService = new TechnologyService(techRepository);
   const techController = new TechnologyController(techService);
 
-  fastify.get('/', {
-    preValidation: [fastify.authenticate]
-  }, async (request, reply) => {
+  fastify.get('/', { preValidation: [fastify.authenticate] }, async (request, reply) => {
     return techController.getTechnologies(request, reply);
+  });
+
+  fastify.post('/', { preValidation: [fastify.authenticate] }, async (request, reply) => {
+    return techController.createTechnology(request, reply);
+  });
+
+  fastify.put('/:id', { preValidation: [fastify.authenticate] }, async (request, reply) => {
+    return techController.updateTechnology(request, reply);
+  });
+
+  fastify.delete('/:id', { preValidation: [fastify.authenticate] }, async (request, reply) => {
+    return techController.deleteTechnology(request, reply);
   });
 };

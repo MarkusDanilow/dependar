@@ -24,8 +24,8 @@ export class VulnStateRepository extends BaseRepository<VulnState, Prisma.VulnSt
     return this.prisma.vulnState.findFirst({ where: query });
   }
 
-  async findAll(query?: Prisma.VulnStateWhereInput): Promise<VulnState[]> {
-    return this.prisma.vulnState.findMany({ where: query });
+  async findAll(query?: any): Promise<VulnState[]> {
+    return this.prisma.vulnState.findMany(query);
   }
 
   async update(id: string, data: Prisma.VulnStateUpdateInput): Promise<VulnState> {
@@ -39,8 +39,9 @@ export class VulnStateRepository extends BaseRepository<VulnState, Prisma.VulnSt
   async getSecurityStats(): Promise<StatsDTO> {
     const all = await this.prisma.vulnState.count();
     const open = await this.prisma.vulnState.count({ where: { status: 'OPEN' } });
+    const inProgress = await this.prisma.vulnState.count({ where: { status: 'IN_PROGRESS' } });
     const resolved = await this.prisma.vulnState.count({ where: { status: 'RESOLVED' } });
     
-    return { total: all, open, resolved };
+    return { total: all, open, inProgress, resolved } as any;
   }
 }

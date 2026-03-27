@@ -14,4 +14,16 @@ export const analyticsRoutes: FastifyPluginAsync = async (fastify: FastifyInstan
   }, async (request, reply) => {
     return analyticsController.getMetrics(request, reply);
   });
+
+  fastify.get('/vuln-states', {
+    preValidation: [fastify.authenticate]
+  }, async (request, reply) => {
+    return analyticsController.getVulnStates(request, reply);
+  });
+
+  fastify.patch('/vuln-states/:id', {
+    preValidation: [fastify.authenticate]
+  }, async (request, reply) => {
+    return analyticsController.patchVulnState(request, reply);
+  });
 };

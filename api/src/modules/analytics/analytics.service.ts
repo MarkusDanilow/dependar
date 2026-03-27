@@ -15,4 +15,17 @@ export class AnalyticsService {
       lastUpdated: new Date().toISOString()
     };
   }
+
+  async getAllVulnStates() {
+    return this.vulnRepo.findAll({
+      include: {
+        technology: true,
+        vulnerability: true
+      }
+    });
+  }
+
+  async updateVulnStatus(id: string, status: any) {
+    return this.vulnRepo.update(id, { status });
+  }
 }

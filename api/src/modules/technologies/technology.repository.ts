@@ -20,7 +20,11 @@ export class TechnologyRepository extends BaseRepository<Technology, Prisma.Tech
   }
 
   async findAll(query?: Prisma.TechnologyWhereInput): Promise<Technology[]> {
-    return this.prisma.technology.findMany({ where: query });
+    return this.prisma.technology.findMany({ 
+      where: query, 
+      orderBy: { name: 'asc' },
+      include: { vulnStates: true }
+    });
   }
 
   async update(id: string, data: Prisma.TechnologyUpdateInput): Promise<Technology> {
@@ -33,7 +37,8 @@ export class TechnologyRepository extends BaseRepository<Technology, Prisma.Tech
 
   async findBySemVer(name: string, versionRange: string): Promise<Technology[]> {
     return this.prisma.technology.findMany({
-      where: { name, version: versionRange } // Simplified for mock
+      where: { name, version: versionRange }, // Simplified for mock
+      orderBy: { name: 'asc' }
     });
   }
 

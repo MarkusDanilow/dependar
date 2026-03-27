@@ -10,7 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const auth = useAuth();
+  const { login } = auth!;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,7 @@ export default function LoginPage() {
         method: 'POST',
         body: JSON.stringify({ email, password })
       });
-      login(res.data.token);
+      login(res.data.token, res.data.user);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,7 +38,7 @@ export default function LoginPage() {
             <Shield className="text-white w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold text-slate-100">Dependar</h1>
-          <p className="text-slate-400 text-sm">Sign in to your Command Center</p>
+          <p className="text-slate-400 text-sm">Melden Sie sich an Ihrem Kontrollzentrum an</p>
         </div>
 
         {error && (
@@ -48,7 +49,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">E-Mail-Adresse</label>
             <input
               type="email"
               required
@@ -60,7 +61,7 @@ export default function LoginPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Passwort</label>
             <input
               type="password"
               required
@@ -76,7 +77,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Anmelden"}
           </button>
         </form>
       </div>

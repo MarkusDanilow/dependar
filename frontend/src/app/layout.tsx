@@ -3,6 +3,7 @@ import { Inter, Fira_Code } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { AppShell } from "@/components/layout/AppShell";
+import { Providers } from "@/components/providers/Providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,11 +30,13 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${firaCode.variable} antialiased bg-slate-900 text-slate-200 flex h-screen overflow-hidden`}
       >
-        <AuthProvider>
-          <AppShell>
-            {children}
-          </AppShell>
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

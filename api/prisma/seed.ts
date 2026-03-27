@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('Clearing database...');
-  // Delete in reverse order of relationships to avoid foreign key constraints
   await prisma.aiInsight.deleteMany();
   await prisma.vulnState.deleteMany();
   await prisma.vulnerability.deleteMany();
@@ -13,6 +12,7 @@ async function main() {
   await prisma.techDependency.deleteMany();
   await prisma.technology.deleteMany();
   await prisma.container.deleteMany();
+  await prisma.project.deleteMany();
   await prisma.host.deleteMany();
   await prisma.user.deleteMany();
 
@@ -20,69 +20,80 @@ async function main() {
   const passwordHash = await bcrypt.hash('password123', 10);
   
   await prisma.user.create({
-    data: { email: 'admin@dependar.local', passwordHash, role: Role.ADMIN }
+    data: { 
+      email: 'admin@dependar.local', 
+      passwordHash, 
+      role: Role.ADMIN,
+      firstName: 'Markus',
+      lastName: 'Danilow'
+    }
   });
-  await prisma.user.create({
-    data: { email: 'viewer@dependar.local', passwordHash, role: Role.VIEWER }
-  });
+
+  console.log('Seeding Projects...');
+  const p1 = await prisma.project.create({ data: { name: 'Dependar CMDB', description: 'Internal CMDB application.' } });
+  const p2 = await prisma.project.create({ data: { name: 'Keycloak IAM', description: 'Identity and Access Management.' } });
+  const p3 = await prisma.project.create({ data: { name: 'Customer Portal', description: 'External facing portal.' } });
 
   console.log('Seeding Hosts & Containers...');
   const host1 = await prisma.host.create({ data: { hostname: 'prod-cluster-01' } });
-  const host2 = await prisma.host.create({ data: { hostname: 'dev-cluster-01' } });
-  const host3 = await prisma.host.create({ data: { hostname: 'db-cluster-01' } });
 
-  const c1 = await prisma.container.create({ data: { containerName: 'frontend-app', hostId: host1.id } });
-  const c2 = await prisma.container.create({ data: { containerName: 'backend-api', hostId: host1.id } });
-  const c3 = await prisma.container.create({ data: { containerName: 'worker-node', hostId: host2.id } });
-  const c4 = await prisma.container.create({ data: { containerName: 'db-server', hostId: host3.id } });
-  // Unused container for variety
-  await prisma.container.create({ data: { containerName: 'cache-redis', hostId: host3.id } });
+  // Keycloak IAM
+  const cKeyApp = await prisma.container.create({ data: { containerName: 'keycloak-app', projectId: p2.id, hostId: host1.id } });
+  const cKeyDb = await prisma.container.create({ data: { containerName: 'keycloak-db', projectId: p2.id, hostId: host1.id } });
+
+  // Customer Portal
+  const cPortalUi = await prisma.container.create({ data: { containerName: 'portal-ui', projectId: p3.id, hostId: host1.id } });
+  const cPortalApi = await prisma.container.create({ data: { containerName: 'portal-api', projectId: p3.id, hostId: host1.id } });
+
+  // Dependar CMDB
+  const cDepBackend = await prisma.container.create({ data: { containerName: 'dependar-backend', projectId: p1.id, hostId: host1.id } });
+  const cDepCache = await prisma.container.create({ data: { containerName: 'dependar-cache', projectId: p1.id, hostId: host1.id } });
 
   console.log('Seeding Technologies...');
-  const react = await prisma.technology.create({ data: { name: 'react', version: '18.2.0' } });
-  const nextjs = await prisma.technology.create({ data: { name: 'next', version: '14.0.0' } });
-  const node = await prisma.technology.create({ data: { name: 'node', version: '20.9.0' } });
-  const fastify = await prisma.technology.create({ data: { name: 'fastify', version: '4.26.2' } });
-  const prismaOrm = await prisma.technology.create({ data: { name: 'prisma', version: '5.10.0' } });
-  const postgres = await prisma.technology.create({ data: { name: 'postgresql', version: '16.0' } });
-  await prisma.technology.create({ data: { name: 'redis', version: '7.0' } });
-  await prisma.technology.create({ data: { name: 'golang', version: '1.21' } });
-  await prisma.technology.create({ data: { name: 'nginx', version: '1.24.0' } });
-  await prisma.technology.create({ data: { name: 'docker', version: '24.0' } });
+  const java = await prisma.technology.create({ data: { name: 'Java', version: '17.0.8' } });
+  const postgres = await prisma.technology.create({ data: { name: 'PostgreSQL', version: '15.3' } });
+  const react = await prisma.technology.create({ data: { name: 'React', version: '18.2.0' } });
+  const nextjs = await prisma.technology.create({ data: { name: 'NextJS', version: '14.0.0' } });
+  const node = await prisma.technology.create({ data: { name: 'Node.js', version: '20.10.0' } });
+  const express = await prisma.technology.create({ data: { name: 'Express', version: '4.18.2' } });
+  const fastify = await prisma.technology.create({ data: { name: 'Fastify', version: '4.26.2' } });
+  const prismaOrm = await prisma.technology.create({ data: { name: 'Prisma', version: '5.10.0' } });
+  const redis = await prisma.technology.create({ data: { name: 'Redis', version: '7.0.12' } });
+  const tailwind = await prisma.technology.create({ data: { name: 'Tailwind CSS', version: '3.4.1' } });
+  const docker = await prisma.technology.create({ data: { name: 'Docker', version: '24.0.6' } });
 
   console.log('Seeding Dependencies...');
+  // Build-time software dependencies (VIOLET lines in frontend)
   await prisma.techDependency.createMany({
     data: [
       { techId: nextjs.id, requiresTechId: react.id },
+      { techId: nextjs.id, requiresTechId: tailwind.id },
       { techId: fastify.id, requiresTechId: node.id },
+      { techId: express.id, requiresTechId: node.id },
       { techId: prismaOrm.id, requiresTechId: node.id },
+      { techId: node.id, requiresTechId: docker.id }, // Conceptual dependency for graph demonstration
     ]
   });
 
-  console.log('Seeding ContainerTechs...');
-  const ct1 = await prisma.containerTech.create({ data: { containerId: c1.id, technologyId: nextjs.id, source: 'sbom' } });
-  const ct2 = await prisma.containerTech.create({ data: { containerId: c2.id, technologyId: fastify.id, source: 'sbom' } });
-  await prisma.containerTech.create({ data: { containerId: c2.id, technologyId: prismaOrm.id, source: 'sbom' } });
-  const ct4 = await prisma.containerTech.create({ data: { containerId: c4.id, technologyId: postgres.id, source: 'agent' } });
+  console.log('Seeding ContainerTechs (Runtime Usage)...');
+  // Keycloak IAM
+  await prisma.containerTech.create({ data: { containerId: cKeyApp.id, technologyId: java.id, source: 'sbom' } });
+  await prisma.containerTech.create({ data: { containerId: cKeyDb.id, technologyId: postgres.id, source: 'agent' } });
   
+  // Customer Portal
+  await prisma.containerTech.create({ data: { containerId: cPortalUi.id, technologyId: nextjs.id, source: 'sbom' } });
+  await prisma.containerTech.create({ data: { containerId: cPortalApi.id, technologyId: express.id, source: 'sbom' } });
+  
+  // Dependar CMDB
+  await prisma.containerTech.create({ data: { containerId: cDepBackend.id, technologyId: fastify.id, source: 'sbom' } });
+  await prisma.containerTech.create({ data: { containerId: cDepBackend.id, technologyId: prismaOrm.id, source: 'sbom' } });
+  await prisma.containerTech.create({ data: { containerId: cDepCache.id, technologyId: redis.id, source: 'agent' } });
+
   console.log('Seeding Vulnerabilities...');
-  const v1 = await prisma.vulnerability.create({ data: { cveId: 'CVE-2024-1001', vulnerableRange: '< 14.0.1', baseSeverity: 'HIGH' } });
-  const v2 = await prisma.vulnerability.create({ data: { cveId: 'CVE-2023-2002', vulnerableRange: '< 4.27.0', baseSeverity: 'CRITICAL' } });
-  const v3 = await prisma.vulnerability.create({ data: { cveId: 'CVE-2022-3003', vulnerableRange: '< 16.1', baseSeverity: 'MEDIUM' } });
-  await prisma.vulnerability.create({ data: { cveId: 'CVE-2021-4004', vulnerableRange: '< 7.1', baseSeverity: 'LOW' } });
-  await prisma.vulnerability.create({ data: { cveId: 'CVE-2024-5005', vulnerableRange: '< 20.10', baseSeverity: 'CRITICAL' } });
-
+  const v1 = await prisma.vulnerability.create({ data: { id: 'CVE-2024-1001', vulnerableRange: '< 5.10.1', baseSeverity: 'HIGH' } });
+  
   console.log('Seeding Vuln States & Insights...');
-  const vs1 = await prisma.vulnState.create({ data: { containerTechId: ct1.id, cveId: v1.cveId, status: Status.OPEN } });
-  await prisma.vulnState.create({ data: { containerTechId: ct2.id, cveId: v2.cveId, status: Status.RESOLVED } });
-  const vs3 = await prisma.vulnState.create({ data: { containerTechId: ct4.id, cveId: v3.cveId, status: Status.OPEN } });
-
-  await prisma.aiInsight.create({
-    data: { vulnStateId: vs1.id, adjustedSeverity: 'MEDIUM' }
-  });
-  await prisma.aiInsight.create({
-    data: { vulnStateId: vs3.id, adjustedSeverity: 'CRITICAL' }
-  });
+  await prisma.vulnState.create({ data: { technologyId: prismaOrm.id, vulnerabilityId: v1.id, status: Status.OPEN } });
 
   console.log('Seeding finished successfully.');
 }
