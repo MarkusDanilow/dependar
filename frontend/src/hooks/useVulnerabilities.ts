@@ -42,6 +42,7 @@ export const useUpdateVulnStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['vuln-states'] });
       queryClient.invalidateQueries({ queryKey: ['technologies'] });
       queryClient.invalidateQueries({ queryKey: ['containers'] });
+      queryClient.invalidateQueries({ queryKey: ['graph'] });
     },
   });
 };

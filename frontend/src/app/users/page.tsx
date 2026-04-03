@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Users, Loader2, UserCircle, Edit, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, Loader2, UserCircle, Edit, Trash2, Plus, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { useGetUsers, useCreateUser, useUpdateUser, useDeleteUser, User } from '@/hooks/useUsers';
 import { UserForm, UserFormData } from '@/components/forms/UserForm';
 import { Modal } from '@/components/ui/Modal';
@@ -32,6 +32,8 @@ export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
@@ -44,8 +46,18 @@ export default function UsersPage() {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const lowSearch = searchQuery.toLowerCase();
+    return users.filter(u => 
+      u.email.toLowerCase().includes(lowSearch) || 
+      (u.firstName && u.firstName.toLowerCase().includes(lowSearch)) ||
+      (u.lastName && u.lastName.toLowerCase().includes(lowSearch))
+    );
+  }, [users, searchQuery]);
+
   const sortedUsers = useMemo(() => {
-    return [...users].sort((a, b) => {
+    return [...filteredUsers].sort((a, b) => {
       let aVal: string;
       let bVal: string;
       if (sortField === 'email') {
@@ -126,19 +138,32 @@ export default function UsersPage() {
   return (
     <div className="p-8 space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="text-amber-500" /> Benutzerverzeichnis
           </h1>
           <p className="text-slate-400 mt-1">Verwalte rollenbasierte Zugriffskontrolle (RBAC) und Anmeldedaten.</p>
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-lg"
-        >
-          <Plus className="w-4 h-4" /> Benutzer hinzufügen
-        </button>
+        
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input 
+              type="text" 
+              placeholder="Benutzer suchen..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors shadow-inner"
+            />
+          </div>
+          <button
+            onClick={handleOpenCreate}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-lg whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" /> Benutzer hinzufügen
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -209,7 +234,7 @@ export default function UsersPage() {
                     }) : '—'}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-3">
                       <button
                         onClick={() => handleOpenEdit(user)}
                         className="text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 p-1.5 rounded transition-colors"

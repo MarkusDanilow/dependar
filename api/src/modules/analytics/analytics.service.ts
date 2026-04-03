@@ -20,12 +20,19 @@ export class AnalyticsService {
     return this.vulnRepo.findAll({
       include: {
         technology: true,
-        vulnerability: true
+        vulnerability: true,
+        aiInsight: true
       }
     });
   }
 
   async updateVulnStatus(id: string, status: any) {
-    return this.vulnRepo.update(id, { status });
+    const data: any = { status };
+    if (status === 'RESOLVED') {
+      data.resolvedAt = new Date();
+    } else {
+      data.resolvedAt = null; // Reset if reopened
+    }
+    return this.vulnRepo.update(id, data);
   }
 }

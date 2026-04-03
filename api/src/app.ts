@@ -13,7 +13,10 @@ import { ingestionRoutes } from './modules/ingest/ingestion.routes';
 import { graphRoutes } from './modules/graph/graph.routes';
 import { chatRoutes } from './modules/chat/chat.routes';
 import { projectRoutes } from './modules/projects/project.routes';
+import { hostRoutes } from './modules/hosts/hosts.routes';
 import { healthRoutes } from './health/health.routes';
+import { apiKeyRoutes } from './modules/apikeys/apikeys.routes';
+import { sourcesRoutes } from './modules/sources/sources.routes';
 
 // Jobs and Repos
 import { CveSyncJob } from './jobs/cve-sync.job';
@@ -42,6 +45,57 @@ export function buildApp(): FastifyInstance {
     }
   });
 
+  // Custom Decorator for verifyApiKey
+  app.decorate('verifyApiKey', async (request: FastifyRequest, reply: FastifyReply) => {
+    const apiKeyHeader = request.headers['x-api-key'];
+
+    if (!apiKeyHeader || typeof apiKeyHeader !== 'string') {
+      return reply.status(401).send({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Missing or invalid X-API-Key header'
+      });
+    }
+
+    const { createHash } = require('crypto');
+    const keyHash = createHash('sha256').update(apiKeyHeader).digest('hex');
+
+    const apiKey = await prisma.apiKey.findUnique({
+      where: { keyHash }
+    });
+
+    if (!apiKey) {
+      return reply.status(401).send({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Invalid API Key'
+      });
+    }
+
+    // Update lastUsedAt in background
+    prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { lastUsedAt: new Date() }
+    }).catch(console.error);
+
+    // Attach user information to request
+    (request as any).apiKeyUserId = apiKey.userId;
+  });
+
+  // Custom Decorator for Agent Authentication (API Key)
+  app.decorate('authenticateAgent', async (request: FastifyRequest, reply: FastifyReply) => {
+    const apiKey = request.headers['x-api-key'];
+    const validKey = process.env.WORKER_API_KEY;
+
+    if (!apiKey || apiKey !== validKey) {
+      reply.status(401).send({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Invalid or missing API Key'
+      });
+    }
+  });
+
   // Register Domain Routes
   app.register(healthRoutes, { prefix: '/api/v1/health' });
   app.register(authRoutes, { prefix: '/api/v1/auth' });
@@ -54,6 +108,9 @@ export function buildApp(): FastifyInstance {
   app.register(graphRoutes, { prefix: '/api/v1/graph' });
   app.register(chatRoutes, { prefix: '/api/v1/chat' });
   app.register(projectRoutes, { prefix: '/api/v1/projects' });
+  app.register(hostRoutes, { prefix: '/api/v1/hosts' });
+  app.register(apiKeyRoutes, { prefix: '/api/v1/apikeys' });
+  app.register(sourcesRoutes, { prefix: '/api/v1/scan-sources' });
 
   // Start Cron Jobs
   const techRepo = new TechnologyRepository(prisma);

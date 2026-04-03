@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { HardDrive, Loader2, Edit, Trash2, Plus, Box, Cpu, X, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { HardDrive, Loader2, Edit, Trash2, Plus, Box, Cpu, X, AlertCircle, Search } from 'lucide-react';
 import { useGetProjects, useCreateProject, useUpdateProject, useDeleteProject, Project } from '@/hooks/useProjects';
 import { useGetContainers, useUpdateContainer } from '@/hooks/useContainers';
 import { ProjectForm, ProjectFormData } from '@/components/forms/ProjectForm';
@@ -33,6 +33,17 @@ export default function ProjectsPage() {
 
   const [isRemoveContainerModalOpen, setIsRemoveContainerModalOpen] = useState(false);
   const [containerToRemove, setContainerToRemove] = useState<any>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredProjects = useMemo(() => {
+    if (!searchQuery.trim()) return projects;
+    const lowSearch = searchQuery.toLowerCase();
+    return projects.filter(p => 
+      p.name.toLowerCase().includes(lowSearch) || 
+      (p.description && p.description.toLowerCase().includes(lowSearch))
+    );
+  }, [projects, searchQuery]);
 
   const handleOpenCreateModal = () => {
     setEditingProject(null);
@@ -143,28 +154,45 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-8 space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <HardDrive className="text-blue-500" /> Projekte
           </h1>
           <p className="text-slate-400 mt-1">Verwalte logische Projekte und sieh dir die zugewiesenen Container und Technologien an.</p>
         </div>
-        <button
-          onClick={handleOpenCreateModal}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-lg"
-        >
-          <Plus className="w-4 h-4" /> Projekt hinzufügen
-        </button>
+        
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input 
+              type="text" 
+              placeholder="Projekte suchen..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors shadow-inner"
+            />
+          </div>
+          <button
+            onClick={handleOpenCreateModal}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-lg whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" /> Projekt hinzufügen
+          </button>
+        </div>
       </div>
 
       {projects.length === 0 ? (
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-12 text-center text-slate-500 shadow-xl">
           Noch keine Projekte vorhanden. Erstelle eines, um loszulegen.
         </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-12 text-center text-slate-500 shadow-xl">
+          Keine Projekte für "{searchQuery}" gefunden.
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {filteredProjects.map((project) => (
             <div key={project.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl flex flex-col group">
               
               {/* Header */}
@@ -182,7 +210,7 @@ export default function ProjectsPage() {
                 </div>
                 
                 {/* Actions */}
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                <div className="flex items-center gap-2 transition-opacity ml-4">
                   <button
                     onClick={() => handleOpenEditModal(project)}
                     className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
@@ -210,7 +238,7 @@ export default function ProjectsPage() {
                         </div>
                         <button 
                           onClick={() => handleOpenRemoveContainerModal(container)}
-                          className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors opacity-0 group-hover/container:opacity-100"
+                          className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                           title="Container aus Projekt entfernen"
                         >
                           <X className="w-3.5 h-3.5" />

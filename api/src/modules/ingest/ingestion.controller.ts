@@ -24,4 +24,22 @@ export class IngestionController extends BaseController {
       return this.handleError(reply, error);
     }
   }
+
+  async postSbomData(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      await this.ingestionService.processSbom(request.body);
+      return this.sendSuccess(reply, { status: 'processed_sbom' });
+    } catch (error) {
+      return this.handleError(reply, error);
+    }
+  }
+
+  async postHostData(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      await this.ingestionService.processHostSoftware(request.body);
+      return this.sendSuccess(reply, { status: 'processed_host_software' });
+    } catch (error) {
+      return this.handleError(reply, error);
+    }
+  }
 }

@@ -1,22 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Cpu, HardDrive, Users, LogOut, Box, ShieldAlert } from 'lucide-react';
+import { Home, Cpu, HardDrive, Users, LogOut, Box, ShieldAlert, Settings, Plus, Server } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Sicherheitslücken', href: '/vulnerabilities', icon: ShieldAlert },
+  { name: 'Hosts / Applikationen', href: '/hosts', icon: Server },
   { name: 'Projekte', href: '/projects', icon: HardDrive },
   { name: 'Container', href: '/containers', icon: Box },
   { name: 'Technologien', href: '/technologies', icon: Cpu },
-  { name: 'Benutzer', href: '/users', icon: Users },
+  { name: 'Users', href: '/users', icon: Users },
+  { name: 'Einstellungen', href: '/settings/apikeys', icon: Settings, matchPrefix: '/settings' },
 ];
 
 export function Sidebar() {
   const auth = useAuth();
-  const logout = auth?.logout || (() => {});
+  const logout = auth?.logout || (() => { });
   const user = auth?.user;
   const pathname = usePathname();
 
@@ -40,19 +42,22 @@ export function Sidebar() {
         </h1>
       </div>
       <nav className="flex-1 px-4 space-y-2">
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${pathname === item.href
-              ? 'bg-blue-600/20 text-blue-400'
-              : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-              }`}
-          >
-            <item.icon className={`w-4 h-4 ${pathname === item.href ? 'text-blue-500' : ''}`} />
-            <span className={`text-sm font-medium ${pathname === item.href ? 'text-white' : ''}`}>{item.name}</span>
-          </Link>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const isActive = item.matchPrefix ? pathname.startsWith(item.matchPrefix) : pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
+                ? 'bg-blue-600/20 text-blue-400'
+                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+            >
+              <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : ''}`} />
+              <span className={`text-sm font-medium ${isActive ? 'text-white' : ''}`}>{item.name}</span>
+            </Link>
+          );
+        })}
       </nav>
       <div className="p-4 border-t border-slate-700">
         <div className="flex items-center justify-between group cursor-pointer hover:bg-slate-700 p-2 rounded-lg transition-colors" onClick={logout} title="Abmelden">

@@ -1,4 +1,4 @@
-import { BaseEdge, EdgeProps, getBezierPath } from 'reactflow';
+import { EdgeProps, getSmoothStepPath } from 'reactflow';
 
 export function BuildtimeEdge({
   sourceX,
@@ -10,7 +10,7 @@ export function BuildtimeEdge({
   style = {},
   markerEnd,
 }: EdgeProps) {
-  const [edgePath] = getBezierPath({
+  const [edgePath] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -20,10 +20,24 @@ export function BuildtimeEdge({
   });
 
   return (
-    <BaseEdge 
-      path={edgePath} 
-      markerEnd={markerEnd} 
-      style={{ ...style, stroke: '#8B5CF6', strokeWidth: 1.5 }} 
-    />
+    <g>
+      {/* Glow effect */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="#8B5CF6"
+        strokeWidth={5}
+        strokeOpacity={0.2}
+        strokeLinecap="round"
+      />
+      {/* Core line */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="#8B5CF6"
+        strokeWidth={2}
+        markerEnd={markerEnd}
+      />
+    </g>
   );
 }

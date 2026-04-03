@@ -5,7 +5,7 @@ import { Cpu, Loader2, Edit, Trash2, Plus, Search, ArrowUpDown, ChevronUp, Chevr
 import { useGetTechnologies, useCreateTechnology, useUpdateTechnology, useDeleteTechnology, Technology } from '@/hooks/useTechnologies';
 import { TechnologyForm, TechnologyFormData } from '@/components/forms/TechnologyForm';
 import { Modal } from '@/components/ui/Modal';
-import { ConfirmDeleteModal } from '@/components/ui/ConfirmDeleteModal';
+import { VersionDeleteModal } from '@/components/technologies/VersionDeleteModal';
 import toast from 'react-hot-toast';
 
 interface GroupedTech {
@@ -30,6 +30,15 @@ export default function TechnologiesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<GroupedTech | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  
+  // Reset pagination on search
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<GroupedTech | null>(null);
 
@@ -51,7 +60,7 @@ export default function TechnologiesPage() {
         groupedTechsMap.set(key, {
           name: tech.name,
           versions: [{ id: tech.id, version: tech.version || 'latest' }],
-          totalVulns: tech.vulnStates?.length || 0,
+          totalVulns: (tech.vulnStates || []).filter((vs: any) => vs.status === 'OPEN' || vs.status === 'IN_PROGRESS').length,
           instances: [tech],
         });
       } else {
@@ -60,7 +69,7 @@ export default function TechnologiesPage() {
         if (!group.versions.some(v => v.version === (tech.version || 'latest'))) {
           group.versions.push({ id: tech.id, version: tech.version || 'latest' });
         }
-        group.totalVulns += (tech.vulnStates?.length || 0);
+        group.totalVulns += (tech.vulnStates || []).filter((vs: any) => vs.status === 'OPEN' || vs.status === 'IN_PROGRESS').length;
         group.instances.push(tech);
       }
     });
@@ -88,6 +97,12 @@ export default function TechnologiesPage() {
 
     return groupedTechsList;
   }, [techs, searchQuery, sortColumn, sortDirection]);
+
+  const totalPages = Math.ceil(processedTechs.length / pageSize);
+  const slicedTechs = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return processedTechs.slice(start, start + pageSize);
+  }, [processedTechs, currentPage, pageSize]);
 
   const handleOpenCreateModal = () => {
     setEditingGroup(null);
@@ -137,13 +152,13 @@ export default function TechnologiesPage() {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (groupToDelete) {
-      const deletePromises = groupToDelete.instances.map(inst => deleteTech.mutateAsync(inst.id));
+  const handleConfirmDelete = async (selectedIds: string[]) => {
+    if (groupToDelete && selectedIds.length > 0) {
+      const deletePromises = selectedIds.map(id => deleteTech.mutateAsync(id));
       
       try {
         await Promise.all(deletePromises);
-        toast.success(`Alle ${groupToDelete.instances.length} Instanzen von ${groupToDelete.name} erfolgreich gelöscht`);
+        toast.success(`${selectedIds.length} Version(en) von ${groupToDelete.name} erfolgreich gelöscht`);
         setIsDeleteModalOpen(false);
         setGroupToDelete(null);
       } catch (error: any) {
@@ -215,14 +230,14 @@ export default function TechnologiesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
-              {processedTechs.length === 0 ? (
+              {slicedTechs.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
                     Keine passenden Technologien gefunden.
                   </td>
                 </tr>
               ) : (
-                processedTechs.map((group) => (
+                slicedTechs.map((group) => (
                   <tr key={group.name} className="hover:bg-slate-700/50 transition-colors group">
                     <td className="px-6 py-4 font-medium text-slate-200">
                       <div className="flex items-center gap-3">
@@ -257,7 +272,7 @@ export default function TechnologiesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-3">
                         <button
                           onClick={() => handleOpenEditModal(group)}
                           className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
@@ -280,6 +295,50 @@ export default function TechnologiesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="bg-slate-900/50 px-6 py-4 border-t border-slate-700/50 flex items-center justify-between">
+            <div className="text-[13px] text-slate-500 font-bold uppercase tracking-wider">
+              Seite {currentPage} von {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm font-bold text-slate-300 hover:bg-slate-700 disabled:opacity-30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                Zurück
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  if (totalPages > 5 && Math.abs(p - currentPage) > 1 && p !== 1 && p !== totalPages) {
+                    if (p === 2 || p === totalPages - 1) return <span key={p} className="text-slate-600 px-1">...</span>;
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-10 h-10 rounded-lg text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        currentPage === p ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm font-bold text-slate-300 hover:bg-slate-700 disabled:opacity-30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                Weiter
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal
@@ -294,12 +353,13 @@ export default function TechnologiesPage() {
         />
       </Modal>
 
-      <ConfirmDeleteModal
+      <VersionDeleteModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="Technologie komplett löschen"
-        message={`Bist du sicher, dass du die Technologie '${groupToDelete?.name}' in allen ${groupToDelete?.instances.length} Versionen komplett aus der CMDB löschen möchtest? Zugehörige Abhängigkeiten werden beeinflusst.`}
+        title="Technologie / Versionen löschen"
+        techName={groupToDelete?.name || ''}
+        versions={groupToDelete?.versions || []}
         isDeleting={deleteTech.isPending}
       />
     </div>

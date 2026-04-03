@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:3000/api/v1';
+export const API_BASE_URL = 'http://localhost:5000/api/v1';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   let token = null;
@@ -22,7 +22,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     try {
       const errPayload = await response.json();
       errorMessage = errPayload.message || errorMessage;
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(errorMessage);
   }
 

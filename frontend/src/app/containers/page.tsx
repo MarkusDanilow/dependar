@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Loader2, Edit, Trash2, Plus, HardDrive, Cpu, X, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Box, Loader2, Edit, Trash2, Plus, HardDrive, Cpu, X, AlertCircle, Search } from 'lucide-react';
 import { 
   useGetContainers, 
   useCreateContainer, 
@@ -42,6 +42,17 @@ export default function ContainersPage() {
 
   const [isRemoveTechModalOpen, setIsRemoveTechModalOpen] = useState(false);
   const [techToRemove, setTechToRemove] = useState<{ containerId: string, technologyId: string, techName: string } | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredContainers = useMemo(() => {
+    if (!searchQuery.trim()) return containers;
+    const lowSearch = searchQuery.toLowerCase();
+    return containers.filter(c => 
+      c.containerName.toLowerCase().includes(lowSearch) || 
+      (c.project && c.project.name.toLowerCase().includes(lowSearch))
+    );
+  }, [containers, searchQuery]);
 
   const handleOpenCreateModal = () => {
     setEditingContainer(null);
@@ -153,28 +164,45 @@ export default function ContainersPage() {
 
   return (
     <div className="p-8 space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Box className="text-emerald-500" /> Container
           </h1>
           <p className="text-slate-400 mt-1">Verwalte einzelne Anwendungsinstanzen und deren zugrunde liegende Technologien.</p>
         </div>
-        <button
-          onClick={handleOpenCreateModal}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-lg"
-        >
-          <Plus className="w-4 h-4" /> Container hinzufügen
-        </button>
+        
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input 
+              type="text" 
+              placeholder="Container suchen..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors shadow-inner"
+            />
+          </div>
+          <button
+            onClick={handleOpenCreateModal}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-lg whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" /> Container hinzufügen
+          </button>
+        </div>
       </div>
 
       {containers.length === 0 ? (
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-12 text-center text-slate-500 shadow-xl">
           Noch keine Container vorhanden. Erstelle einen, um loszulegen.
         </div>
+      ) : filteredContainers.length === 0 ? (
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-12 text-center text-slate-500 shadow-xl">
+          Keine Container für "{searchQuery}" gefunden.
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
-          {containers.map((container) => (
+          {filteredContainers.map((container) => (
             <div key={container.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl flex flex-col group hover:border-slate-600 transition-colors">
               
               {/* Header */}
@@ -198,7 +226,7 @@ export default function ContainersPage() {
                 </div>
                 
                 {/* Actions */}
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
+                <div className="flex items-center gap-2 transition-opacity ml-4">
                   <button
                     onClick={() => handleOpenEditModal(container)}
                     className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
@@ -235,7 +263,7 @@ export default function ContainersPage() {
                         <span className={`border-l pl-1.5 ml-0.5 max-w-[100px] truncate ${hasVulns ? 'border-red-500/30 text-red-500/50' : 'border-slate-600 text-slate-500'}`}>v{tech.version}</span>
                         <button 
                           onClick={() => handleOpenRemoveTechModal(container.id, tech.id, tech.name)}
-                          className={`ml-1 p-0.5 rounded transition-colors opacity-0 group-hover/tag:opacity-100 ${
+                          className={`ml-1 p-0.5 rounded transition-colors ${
                             hasVulns ? 'text-red-400 hover:bg-red-500/10' : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
                           }`}
                           title="Entfernen"
