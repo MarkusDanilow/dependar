@@ -1,148 +1,103 @@
 classDiagram
-    %% --- BASE CLASSES (DRY Principle) ---
+    %% --- ARCHITECTURAL BASE ---
     class BaseController {
         <<abstract>>
-        #sendSuccess(res: FastifyReply, data: any, statusCode?: number): void
-        #handleError(res: FastifyReply, error: Error): void
+        #reply(res: FastifyReply, data: any, code?: number): void
+        #error(res: FastifyReply, error: Error): void
     }
 
-    class BaseRepository~T~ {
-        <<abstract>>
-        #prisma: PrismaClient
-        +create(data: any): Promise~T~
-        +findById(id: string): Promise~T~
-        +findAll(query?: any): Promise~T[]~
-        +update(id: string, data: any): Promise~T~
-        +delete(id: string): Promise~T~
+    %% --- MODULAR STRUCTURE (Example Modules) ---
+    %% Each module follows: Routes -> Controller -> Service -> Prisma
+
+    class TechnologyModule {
+        +TechnologyController
+        +TechnologyService
+        +TechnologyRepository
     }
 
-    %% --- INTERFACES ---
-    class IRepository~T~ {
-        <<interface>>
-        +create(data: any): Promise~T~
-        +findById(id: string): Promise~T~
-        +findAll(query?: any): Promise~T[]~
-        +update(id: string, data: any): Promise~T~
-        +delete(id: string): Promise~T~
+    class ProjectModule {
+        +ProjectController
+        +ProjectService
     }
 
-    class ITechnologyRepository {
-        <<interface>>
-        +findBySemVer(name: string, versionRange: string): Promise~Technology[]~
+    class HostModule {
+        +HostController
+        +HostService
     }
 
-    class IIngestionStrategy {
-        <<interface>>
-        +parsePayload(payload: any): ParsedTechDTO[]
+    class UserModule {
+        +UserController
+        +UserService
     }
 
-    %% --- REPOSITORIES (Data Access Layer) ---
-    class UserRepository {
-        +findByEmail(email: string): Promise~User~
-    }
-    class TechnologyRepository {
-        +findBySemVer(name, versionRange)
-    }
-    class ContainerRepository {
-        +findByHost(hostId: string): Promise~Container[]~
-    }
-    class VulnStateRepository {
-        +getSecurityStats(): Promise~StatsDTO~
-    }
-
-    %% --- SERVICES (Business Logic Layer) ---
-    class AuthService {
-        -userRepo: UserRepository
-        +login(credentials: LoginDTO): Promise~string~
-    }
-    class UserService {
-        -userRepo: UserRepository
-        +getUsers(): Promise~User[]~
-    }
+    %% --- SERVICES (Logic Layer) ---
     class TechnologyService {
-        -techRepo: TechnologyRepository
-        +getAllTechnologies(): Promise~Technology[]~
-    }
-    class ContainerService {
-        -containerRepo: ContainerRepository
-        +getProjectsAndContainers(): Promise~Container[]~
-    }
-    class AnalyticsService {
-        -vulnRepo: VulnStateRepository
-        +getDashboardMetrics(): Promise~MetricsDTO~
-    }
-    class SettingsService {
-        +getGlobalSettings(): Promise~SettingsDTO~
-    }
-    class IngestionService {
-        -techRepo: ITechnologyRepository
-        +processPayload(source: string, payload: any): Promise~void~
-    }
-    class GraphService {
-        -techRepo: ITechnologyRepository
-        +buildReactFlowData(): Promise~GraphDTO~
-    }
-    class AiChatService {
-        -ollamaEndpoint: string
-        +analyzeRiskContext(vulnStateId: string): Promise~AiInsight~
-    }
-    class CveSyncService {
-        -techRepo: ITechnologyRepository
-        +cronFetchDailyThreats(): void
+        -repo: TechnologyRepository
+        +getAll(query: any): Promise~Technology[]~
+        +create(data: any): Promise~Technology~
+        +update(id: string, data: any): Promise~Technology~
+        +delete(id: string): Promise~void~
     }
 
-    %% --- CONTROLLERS (Presentation Layer) ---
-    class AuthController {
-        -authService: AuthService
-        +postLogin(req, res): void
+    class ProjectService {
+        -prisma: PrismaClient
+        +listProjects(): Promise~Project[]~
+        +assignContainer(projectId, containerId): Promise~void~
     }
-    class UserController {
-        -userService: UserService
-        +getUsers(req, res): void
+
+    class HostService {
+        -prisma: PrismaClient
+        +listHosts(): Promise~Host[]~
+        +addTechToHost(hostId, techId): Promise~void~
     }
+
+    class AnalyticsService {
+        +getDashboardStats(): Promise~DashboardDTO~
+        -calculateMttr(): number
+        -getSecurityPosture(): number
+    }
+
+    class IngestService {
+        +processAgentPayload(payload: AgentData): Promise~void~
+        -upsertInfrastructure(data: any): void
+    }
+
+    %% --- CONTROLLERS (API Layer) ---
     class TechnologyController {
-        -techService: TechnologyService
+        -service: TechnologyService
         +getTechnologies(req, res): void
+        +postTechnology(req, res): void
     }
-    class ContainerController {
-        -containerService: ContainerService
-        +getContainers(req, res): void
+
+    class ProjectController {
+        -service: ProjectService
+        +getProjects(req, res): void
+        +patchProject(req, res): void
     }
+
+    class HostController {
+        -service: HostService
+        +getHosts(req, res): void
+        +postHost(req, res): void
+    }
+
     class AnalyticsController {
-        -analyticsService: AnalyticsService
+        -service: AnalyticsService
         +getMetrics(req, res): void
-    }
-    class SettingsController {
-        -settingsService: SettingsService
-        +getSettings(req, res): void
-    }
-    class IngestionController {
-        -ingestionService: IngestionService
-        +postAgentData(req, res): void
-    }
-    class GraphController {
-        -graphService: GraphService
-        +getGraph(req, res): void
-    }
-    class AiChatController {
-        -aiChatService: AiChatService
-        +postMessage(req, res): void
     }
 
     %% --- RELATIONSHIPS ---
-    IRepository <|.. BaseRepository
-    BaseRepository <|-- UserRepository
-    BaseRepository <|-- TechnologyRepository
-    BaseRepository <|-- ContainerRepository
-    BaseRepository <|-- VulnStateRepository
-    ITechnologyRepository <|.. TechnologyRepository
-    
-    BaseController <|-- AuthController
-    BaseController <|-- UserController
     BaseController <|-- TechnologyController
-    BaseController <|-- ContainerController
+    BaseController <|-- ProjectController
+    BaseController <|-- HostController
     BaseController <|-- AnalyticsController
-    BaseController <|-- SettingsController
-    BaseController <|-- IngestionController
-    BaseController <|-- GraphController
-    BaseController <|-- AiChatController
+    BaseController <|-- UserController
+
+    TechnologyController ..> TechnologyService : "uses"
+    ProjectController ..> ProjectService : "uses"
+    HostController ..> HostService : "uses"
+    AnalyticsController ..> AnalyticsService : "uses"
+    
+    TechnologyService ..> Repository : "data access"
+    ProjectService ..> PrismaClient : "direct access"
+    HostService ..> PrismaClient : "direct access"

@@ -1,52 +1,52 @@
-# 🎨 Dependar: UI Showcase
+# 🎨 Dependar: UI Showcase (Mission Control)
 
-This document provides a visual overview of the Dependar user interface. The design is based on our High-Contrast Dark Mode Theme (Slate) and is optimized for maximum clarity when managing complex infrastructures and security alerts.
+Dieses Dokument bietet einen visuellen Überblick über die Dependar-Benutzeroberfläche. Das Design basiert auf unserem High-Contrast Dark Mode Theme (Slate) und ist optimiert für maximale Übersichtlichkeit bei der Verwaltung komplexer Infrastrukturen und Sicherheitswarnungen.
 
 ---
 
-## 1. Authentication (Login)
-A clean, secure entry point into the system, protected by our JWT-based authentication.
+## 1. Login-Zentrale
+Ein sicherer Einstiegspunkt in das System, geschützt durch JWT-basierte Authentifizierung und rollenbasierten Zugriff (RBAC).
 
 ![Login Screen](assets/login.PNG)
 
 ---
 
-## 2. Dashboard: Interactive Dependency Graph & AI Copilot
-The heart of Dependar. Here, the entire infrastructure is visualized as an interactive graph (`React Flow`). On the right side is the integrated Ollama AI Copilot for auto-triage and context-aware chat inputs.
+## 2. Dashboard: Mission Control & Abhängigkeitsgraph
+Das Herzstück von Dependar. Hier wird die gesamte Infrastruktur als interaktiver Graph (`React Flow`) visualisiert. In Echtzeit berechnete Metriken für Sicherheitslage, SLA-Verletzungen und MTTR-Trends geben sofortigen Aufschluss über den Systemzustand.
 
 ![Dashboard & AI Copilot](assets/dashboard.PNG)
 
 ---
 
-## 3. Analytics & Security Posture
-Comprehensive metrics on system health, performance, and security. Here, CVEs are categorized and historical security trends of recent days are visualized.
+## 3. Analytics & Sicherheits-Metriken
+Umfassende Auswertungen zu Systemzustand und Performance. CVEs werden kategorisiert und historische Sicherheitstrends der letzten Tage visualisiert, um proaktives Handeln zu ermöglichen.
 
 ![Analytics](assets/analytics.PNG)
 
 ---
 
-## 4. Technologies
-A normalized view of all technologies (frameworks, databases, runtimes) discovered in the network. Instantly shows how many containers use a specific technology and whether critical vulnerabilities exist.
+## 4. Technologien & Abhängigkeiten
+Eine normalisierte Ansicht aller im Netzwerk entdeckten Technologien (Frameworks, Datenbanken, Laufzeiten). Inklusive **clientseitiger Pagination** und **Echtzeit-Suche** für effiziente Verwaltung großer Bestände.
 
 ![Technologies](assets/technologies.PNG)
 
 ---
 
-## 5. Projects & Containers
-The operational view of running containers and projects. Offers real-time metrics (CPU, RAM, Uptime) and quick actions to start/stop services.
+## 5. Projekte, Container & Hosts
+Die operative Sicht auf laufende Container, Projekte und physische Hosts. Bietet nun eine konsistente Suchfunktion über alle Asset-Klassen hinweg, um Instanzen in Sekundenbruchteilen zu finden.
 
 ![Projects & Containers](assets/projects.PNG)
 
 ---
 
-## 6. User Management
-Lightweight, role-based access control (RBAC). Here, administrators manage access to the Dependar system.
+## 6. Benutzerverzeichnis
+Leichtgewichtige, rollenbasierte Zugriffskontrolle (RBAC). Administratoren verwalten hier Zugriffe, Sicherheitsrollen und API-Keys der Benutzer.
 
 ![User Management](assets/users.PNG)
 
 ---
 
-## 7. Settings
-Global configurations, profile settings, notification preferences, and security options (like Two-Factor Authentication).
+## 7. Systemeinstellungen
+Globale Konfigurationen, Profil-Einstellungen, Benachrichtigungspräferenzen und Sicherheitsoptionen der Dependar-Plattform.
 
 ![Settings](assets/settings.PNG)

@@ -1,16 +1,20 @@
-# ⚙️ Tech Stack Architecture
+# ⚙️ Tech Stack & System-Architektur
 
-To ensure testability, clean OOP patterns, and maintainability, we rely on a strongly typed ecosystem with clear layer separation (Controller -> Service -> Repository), while keeping the framework overhead minimal.
+Um Wartbarkeit, Testbarkeit und Skalierbarkeit zu gewährleisten, setzt Dependar auf ein modularisiertes, stark typisiertes Ökosystem mit klarer Schichttrennung (Controller -> Service -> Datenbank).
 
 ## Core Application
-* **Backend:** `Node.js` + `Fastify` (or `Express`) & `TypeScript`. A lightweight, high-performance web server setup.
-* **Task Scheduling:** `node-cron` (or similar) for the internal background jobs (e.g., daily CVE threat syncing).
-* **Frontend:** `Next.js` (React) App Router + `React Flow` for interactive, hardware-accelerated dependency graph rendering.
-* **AI Copilot:** `Ollama` (Locally hosted LLM like Llama 3). Communication via REST.
+* **Backend:** `Node.js` + `Fastify` & `TypeScript`. Eine hochperformante, API-fokussierte Architektur, organisiert in spezialisierten Modulen (z.B. `Ingest`, `Analytics`, `Inventory`).
+* **Frontend:** `Next.js` (React) App Router. Ein barrierefreies "Mission Control" Dashboard mit Fokus auf WCAG-Konformität, optimierter Typografie und hocheffizienten Such- & Paginations-Logiken.
+* **Visualisierung:** `React Flow` für interaktive, hardwarebeschleunigte Abhängigkeitsgraphen der gesamten IT-Infrastruktur.
+* **AI Copilot:** `Ollama` (Lokal gehostetes LLM wie Llama 3). Die Kommunikation erfolgt über REST, um Risiko-Kontexte und Behebungsstrategien zu analysieren.
 
-## Data Ingestion / Discovery
-* **Dependar Agent:** `Go` (Golang). An extremely lightweight, compiled binary with no external dependencies. Scans local environments (Docker sockets, `package.json`, etc.) and periodically pushes data to the Fastify REST API.
+## Daten-Ingest & Discovery
+* **Dependar Agent:** `Go` (Golang). Ein extrem leichtgewichtiger, kompilierter Binär-Agent ohne externe Abhängigkeiten.
+    * **Docker-Discovery:** Nutzt das offizielle Docker SDK für tiefe Scans (Labels, ENV, Metadaten).
+    * **Dependency-Scanning:** Extrahiert Versionen direkt aus Dateisystemen (z.B. `package.json`).
+    * **Push-Modell:** Übermittelt Daten periodisch via authentifiziertem REST an das Backend.
 
-## Data Layer
-* **Database:** `PostgreSQL 16`. Provides relational integrity for graphs, improved performance, and `JSONB` for flexible metadata.
-* **ORM:** `Prisma`. Generates type-safe repositories for our backend.
+## Daten-Layer
+* **Datenbank:** `PostgreSQL 16`. Bietet relationale Integrität für komplexe Graphen, hohe Performance und `JSONB` für flexible Metadaten.
+* **ORM:** `Prisma`. Generiert typsichere Repositories und Abstraktionsschichten für den Backend-Kern.
+* **Automatisierung:** Integriertes Vulnerability-Syncing (CVEs) mittels täglicher Hintergrundjobs.

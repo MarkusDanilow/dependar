@@ -1,27 +1,41 @@
 erDiagram
     %% Auth & Users
+    USER ||--o{ API_KEY : "owns"
     USER {
         uuid id PK
         string email
         string password_hash
         string role "ADMIN, VIEWER"
+        string first_name
+        string last_name
         datetime created_at
     }
 
-    %% Core Infrastructure
+    API_KEY {
+        uuid id PK
+        string key_hash
+        string name
+        datetime created_at
+        datetime last_used_at
+        datetime expires_at
+        uuid user_id FK
+    }
+
+    %% Infrastructure & Ownership
+    PROJECT ||--o{ CONTAINER : "groups"
+    PROJECT ||--o{ PROJECT_TECH : "manages"
+    PROJECT ||--o{ PROJECT_HOST : "deployed on"
+    PROJECT ||--o{ VULN_STATE : "security tracking"
+    
     HOST ||--o{ CONTAINER : "hosts"
-    CONTAINER ||--o{ CONTAINER_TECH : "uses"
-    
-    %% Technology & Global Dependencies
-    TECHNOLOGY ||--o{ TECH_DEPENDENCY : "has"
-    TECHNOLOGY ||--o{ TECH_DEPENDENCY : "is required by"
-    TECHNOLOGY ||--o{ CONTAINER_TECH : "is deployed as"
-    
-    %% Security & AI
-    VULNERABILITY ||--o{ VULN_STATE : "triggers"
-    TECHNOLOGY ||--o{ VULN_STATE : "has security state"
-    PROJECT ||--o{ VULN_STATE : "has security state"
-    VULN_STATE ||--o| AI_INSIGHT : "analyzed by"
+    HOST ||--o{ HOST_TECH : "direct installation"
+    HOST ||--o{ PROJECT_HOST : "belongs to"
+
+    PROJECT {
+        uuid id PK
+        string name
+        string description
+    }
 
     HOST {
         uuid id PK
@@ -30,14 +44,23 @@ erDiagram
 
     CONTAINER {
         uuid id PK
+        uuid project_id FK
         uuid host_id FK
         string container_name
     }
 
+    %% Technology & Deployments
+    TECHNOLOGY ||--o{ CONTAINER_TECH : "deployed in container"
+    TECHNOLOGY ||--o{ PROJECT_TECH : "assigned to project"
+    TECHNOLOGY ||--o{ HOST_TECH : "installed on host"
+    TECHNOLOGY ||--o{ TECH_DEPENDENCY : "has sub-dependencies"
+    TECHNOLOGY ||--o{ VULN_STATE : "has security state"
+
     TECHNOLOGY {
         uuid id PK
-        string name "e.g., nextjs"
-        string version "e.g., 14.0.0"
+        string name
+        string version
+        string ecosystem
     }
 
     TECH_DEPENDENCY {
@@ -53,6 +76,31 @@ erDiagram
         string source
     }
 
+    PROJECT_TECH {
+        uuid id PK
+        uuid project_id FK
+        uuid technology_id FK
+        string source
+    }
+
+    HOST_TECH {
+        uuid id PK
+        uuid host_id FK
+        uuid technology_id FK
+        string source
+    }
+
+    PROJECT_HOST {
+        uuid id PK
+        uuid project_id FK
+        uuid host_id FK
+        string source
+    }
+
+    %% Security & Scanning
+    VULNERABILITY ||--o{ VULN_STATE : "triggers"
+    VULN_STATE ||--o| AI_INSIGHT : "analyzed by"
+    
     VULNERABILITY {
         string id PK
         string vulnerable_range
@@ -61,14 +109,27 @@ erDiagram
 
     VULN_STATE {
         uuid id PK
-        uuid technology_id FK "optional"
-        uuid project_id FK "optional"
+        uuid technology_id FK
+        uuid project_id FK
         string vulnerability_id FK
         string status "OPEN, IN_PROGRESS, RESOLVED, IGNORED"
+        datetime created_at
+        datetime resolved_at
     }
 
     AI_INSIGHT {
         uuid id PK
         uuid vuln_state_id FK
         string adjusted_severity
+    }
+
+    SECURITY_SCAN_SOURCE {
+        uuid id PK
+        string name
+        string url
+        string type
+        boolean is_active
+        datetime last_sync_at
+        datetime created_at
+        datetime updated_at
     }
